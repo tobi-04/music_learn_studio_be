@@ -5,49 +5,53 @@
 ### Changes Made
 
 #### 1. **JwtTokenProvider.java** (New Component)
-   - Location: `src/main/java/com/tobi/MusicLearn_Studio_Backend/common/security/JwtTokenProvider.java`
-   - **Features:**
-     - `generateToken(userId)` - Generate JWT with userId as subject
-     - `generateToken(userId, claims)` - Generate JWT with custom claims
-     - `getUserIdFromToken(token)` - Extract userId from token
-     - `getClaimsFromToken(token)` - Extract all claims
-     - `validateToken(token)` - Validate token signature
-     - `isTokenExpired(token)` - Check if token is expired
-     - `getExpirationDateFromToken(token)` - Get expiration date
-   - **Algorithm:** HS512 (HMAC-SHA512)
-   - **Configuration:**
-     - Secret: Loaded from `${jwt.secret}` (from .env file: `691abf92525aa9cd04ab7740`)
-     - Expiration: `${jwt.expiration}` (from .env file: `3600000` ms = 1 hour)
+
+- Location: `src/main/java/com/tobi/MusicLearn_Studio_Backend/common/security/JwtTokenProvider.java`
+- **Features:**
+  - `generateToken(userId)` - Generate JWT with userId as subject
+  - `generateToken(userId, claims)` - Generate JWT with custom claims
+  - `getUserIdFromToken(token)` - Extract userId from token
+  - `getClaimsFromToken(token)` - Extract all claims
+  - `validateToken(token)` - Validate token signature
+  - `isTokenExpired(token)` - Check if token is expired
+  - `getExpirationDateFromToken(token)` - Get expiration date
+- **Algorithm:** HS512 (HMAC-SHA512)
+- **Configuration:**
+  - Secret: Loaded from `${jwt.secret}` (from .env file: `691abf92525aa9cd04ab7740`)
+  - Expiration: `${jwt.expiration}` (from .env file: `3600000` ms = 1 hour)
 
 #### 2. **AuthServiceImpl.java** (Updated)
-   - **Injection:** Added `private final JwtTokenProvider jwtTokenProvider;`
-   - **register() method:**
-     ```java
-     String token = jwtTokenProvider.generateToken(savedUser.getId());
-     return AuthResponse.builder()
-             .token(token)
-             .user(convertToResponse(savedUser))
-             .build();
-     ```
-   - **login() method:**
-     ```java
-     String token = jwtTokenProvider.generateToken(user.getId());
-     return AuthResponse.builder()
-             .token(token)
-             .user(convertToResponse(user))
-             .build();
-     ```
+
+- **Injection:** Added `private final JwtTokenProvider jwtTokenProvider;`
+- **register() method:**
+  ```java
+  String token = jwtTokenProvider.generateToken(savedUser.getId());
+  return AuthResponse.builder()
+          .token(token)
+          .user(convertToResponse(savedUser))
+          .build();
+  ```
+- **login() method:**
+  ```java
+  String token = jwtTokenProvider.generateToken(user.getId());
+  return AuthResponse.builder()
+          .token(token)
+          .user(convertToResponse(user))
+          .build();
+  ```
 
 #### 3. **pom.xml** (Updated Dependencies)
-   - **JJWT Version:** Downgraded to 0.11.5 (from 0.12.3) for Java 21 compatibility
-   - **Dependencies Added:**
-     - `io.jsonwebtoken:jjwt-api:0.11.5`
-     - `io.jsonwebtoken:jjwt-impl:0.11.5` (runtime)
-     - `io.jsonwebtoken:jjwt-jackson:0.11.5` (runtime)
+
+- **JJWT Version:** Downgraded to 0.11.5 (from 0.12.3) for Java 21 compatibility
+- **Dependencies Added:**
+  - `io.jsonwebtoken:jjwt-api:0.11.5`
+  - `io.jsonwebtoken:jjwt-impl:0.11.5` (runtime)
+  - `io.jsonwebtoken:jjwt-jackson:0.11.5` (runtime)
 
 ### How It Works
 
 **Registration Flow:**
+
 1. User calls `POST /api/v1/auth/register` with `RegisterRequest`
 2. User is created and saved to MongoDB
 3. `JwtTokenProvider.generateToken(userId)` is called
@@ -59,6 +63,7 @@
 5. `AuthResponse` is returned with real JWT token
 
 **Login Flow:**
+
 1. User calls `POST /api/v1/auth/login` with `LoginRequest`
 2. User is found and password is validated
 3. `JwtTokenProvider.generateToken(userId)` is called
@@ -88,6 +93,7 @@
 ### Test the Implementation
 
 **1. Register a New User:**
+
 ```bash
 curl -X POST http://localhost:6888/api/v1/auth/register \
   -H "Content-Type: application/json" \
@@ -101,6 +107,7 @@ curl -X POST http://localhost:6888/api/v1/auth/register \
 ```
 
 **2. Login:**
+
 ```bash
 curl -X POST http://localhost:6888/api/v1/auth/login \
   -H "Content-Type: application/json" \
@@ -111,6 +118,7 @@ curl -X POST http://localhost:6888/api/v1/auth/login \
 ```
 
 **3. Verify Token at jwt.io:**
+
 - Paste the returned `token` value at https://jwt.io
 - You should see:
   - **Header:** Algorithm HS512
@@ -118,9 +126,11 @@ curl -X POST http://localhost:6888/api/v1/auth/login \
   - **Signature:** Verify with secret: `691abf92525aa9cd04ab7740`
 
 ### Build Status
+
 ✅ **BUILD SUCCESS** - All 27 source files compile without errors
 
 ### Git Commit
+
 ```
 Implement JWT token generation in Auth module
 - Inject JwtTokenProvider into AuthServiceImpl
@@ -130,7 +140,9 @@ Implement JWT token generation in Auth module
 ```
 
 ### Next Steps (Optional)
+
 To complete JWT authentication:
+
 1. Create `JwtAuthenticationFilter` to validate tokens on protected endpoints
 2. Add `SecurityFilterChain` configuration to apply JWT filter
 3. Create `@PreAuthorize` annotations on controller methods requiring authentication
