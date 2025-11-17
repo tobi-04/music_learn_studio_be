@@ -41,9 +41,9 @@ public class JwtTokenProvider {
             if (secretBytes.length < 64) {
                 log.warn("JWT Secret is less than 512 bits. Current size: {} bits", secretBytes.length * 8);
             }
-            
+
             SecretKey key = Keys.hmacShaKeyFor(secretBytes);
-            
+
             Date now = new Date();
             Date expiryDate = new Date(now.getTime() + jwtExpirationMs);
 
@@ -58,7 +58,9 @@ public class JwtTokenProvider {
             log.error("Error creating JWT token", e);
             throw new RuntimeException("Error creating JWT token", e);
         }
-    }    /**
+    }
+
+    /**
      * Lấy userId từ JWT token
      */
     public String getUserIdFromToken(String token) {
