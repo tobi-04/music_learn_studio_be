@@ -4,6 +4,7 @@ import com.tobi.MusicLearn_Studio_Backend.common.dto.PageResponse;
 import com.tobi.MusicLearn_Studio_Backend.common.exceptions.BadRequestException;
 import com.tobi.MusicLearn_Studio_Backend.common.exceptions.DuplicateResourceException;
 import com.tobi.MusicLearn_Studio_Backend.common.exceptions.ResourceNotFoundException;
+import com.tobi.MusicLearn_Studio_Backend.common.security.JwtTokenProvider;
 import com.tobi.MusicLearn_Studio_Backend.common.utils.PageUtils;
 import com.tobi.MusicLearn_Studio_Backend.modules.auth.dto.request.LoginRequest;
 import com.tobi.MusicLearn_Studio_Backend.modules.auth.dto.request.RegisterRequest;
@@ -32,6 +33,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Override
     @Transactional
@@ -62,8 +64,10 @@ public class AuthServiceImpl implements AuthService {
         User savedUser = userRepository.save(user);
         log.info("User registered successfully with ID: {}", savedUser.getId());
 
+        String token = jwtTokenProvider.generateToken(savedUser.getId());
+
         return AuthResponse.builder()
-                .token("jwt-token-will-be-implemented")
+                .token(token)
                 .user(convertToResponse(savedUser))
                 .build();
     }
@@ -88,8 +92,10 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("User logged in successfully: {}", user.getUsername());
 
+        String token = jwtTokenProvider.generateToken(user.getId());
+
         return AuthResponse.builder()
-                .token("jwt-token-will-be-implemented")
+                .token(token)
                 .user(convertToResponse(user))
                 .build();
     }
