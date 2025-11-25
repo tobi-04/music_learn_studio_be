@@ -18,10 +18,10 @@ import java.util.Map;
 @Component
 public class JwtTokenProvider {
 
-    @Value("${jwt.secret}")
+    @Value("${jwt.secret:dummy-jwt-secret-key-for-development-only-please-change-in-production-this-must-be-at-least-512-bits-long}")
     private String jwtSecret;
 
-    @Value("${jwt.expiration}")
+    @Value("${jwt.expiration:86400000}")
     private long jwtExpirationMs;
 
     /**

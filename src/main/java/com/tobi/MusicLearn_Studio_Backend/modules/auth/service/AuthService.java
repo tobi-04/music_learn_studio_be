@@ -86,4 +86,9 @@ public interface AuthService {
      * Mở khóa tài khoản user
      */
     UserResponse unlockUser(String id);
+
+    /**
+     * Lấy thông tin user hiện tại từ userId
+     */
+    UserResponse getCurrentUser(String userId);
 }

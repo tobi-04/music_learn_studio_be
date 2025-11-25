@@ -2,6 +2,8 @@ package com.tobi.MusicLearn_Studio_Backend.modules.auth.controller;
 
 import com.tobi.MusicLearn_Studio_Backend.common.dto.BaseResponse;
 import com.tobi.MusicLearn_Studio_Backend.common.dto.PageResponse;
+import com.tobi.MusicLearn_Studio_Backend.common.exceptions.BadRequestException;
+import com.tobi.MusicLearn_Studio_Backend.common.security.JwtTokenProvider;
 import com.tobi.MusicLearn_Studio_Backend.modules.auth.dto.request.LoginRequest;
 import com.tobi.MusicLearn_Studio_Backend.modules.auth.dto.request.RegisterRequest;
 import com.tobi.MusicLearn_Studio_Backend.modules.auth.dto.request.UpdateUserRequest;
@@ -33,6 +35,7 @@ import java.util.List;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtTokenProvider jwtTokenProvider;
 
     @Operation(summary = "Đăng ký tài khoản mới", description = "Tạo tài khoản người dùng mới với thông tin đầy đủ. Username và email phải unique.")
     @ApiResponses(value = {
@@ -59,6 +62,32 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(BaseResponse.success("Login successful", response));
+    }
+
+    @Operation(summary = "Lấy thông tin user hiện tại", description = "Lấy thông tin user hiện tại dựa vào JWT token trong Authorization header. Dùng để kiểm tra quyền admin.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lấy thông tin thành công", content = @Content(schema = @Schema(implementation = UserResponse.class))),
+            @ApiResponse(responseCode = "401", description = "Token không hợp lệ hoặc đã hết hạn"),
+            @ApiResponse(responseCode = "404", description = "Không tìm thấy người dùng")
+    })
+    @GetMapping("/me")
+    public ResponseEntity<BaseResponse<UserResponse>> getCurrentUser(
+            @Parameter(description = "JWT Token", required = true) @RequestHeader("Authorization") String authHeader) {
+
+        // Extract token from "Bearer <token>"
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            throw new BadRequestException("Invalid Authorization header format. Expected: Bearer <token>");
+        }
+
+        String token = authHeader.substring(7);
+        String userId = jwtTokenProvider.getUserIdFromToken(token);
+
+        if (userId == null || !jwtTokenProvider.validateToken(token)) {
+            throw new BadRequestException("Invalid or expired token");
+        }
+
+        UserResponse response = authService.getCurrentUser(userId);
+        return ResponseEntity.ok(BaseResponse.success(response));
     }
 
     @Operation(summary = "Tạo nhiều users cùng lúc", description = "Bulk create users - hữu ích cho việc import dữ liệu")

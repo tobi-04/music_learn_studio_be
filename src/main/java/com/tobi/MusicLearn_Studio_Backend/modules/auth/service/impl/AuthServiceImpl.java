@@ -324,6 +324,21 @@ public class AuthServiceImpl implements AuthService {
         return convertToResponse(unlockedUser);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getCurrentUser(String userId) {
+        log.info("Getting current user with ID: {}", userId);
+
+        User user = userRepository.findByIdAndIsDeletedFalse(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "id", userId));
+
+        if (user.getIsLocked()) {
+            throw new BadRequestException("User account is locked");
+        }
+
+        return convertToResponse(user);
+    }
+
     // Converter method
     private UserResponse convertToResponse(User user) {
         return UserResponse.builder()
