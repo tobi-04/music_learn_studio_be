@@ -20,13 +20,13 @@ public class CreateMusicTrackRequest {
 
     private String description;
 
-    @NotBlank(message = "File URL is required")
+    // fileUrl is optional - will be set by service after uploading file
     private String fileUrl;
 
     private String coverImageUrl;
 
     @NotNull(message = "Duration is required")
-    private Double duration; // in minutes
+    private Double duration; // in seconds
 
     @NotNull(message = "File size is required")
     private Long fileSize; // in bytes

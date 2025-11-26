@@ -27,7 +27,7 @@ public class MusicTrackResponse {
     private String description;
 
     private String fileUrl;
-
+    private String thumbnailUrl;
     private String coverImageUrl;
 
     private Double duration;

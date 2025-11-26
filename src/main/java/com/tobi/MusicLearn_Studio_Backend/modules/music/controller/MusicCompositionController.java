@@ -26,6 +26,20 @@ public class MusicCompositionController {
 
     private final MusicCompositionService compositionService;
 
+    @GetMapping("/draft")
+    @Operation(summary = "Get or create a draft composition for the user")
+    public ResponseEntity<BaseResponse<CompositionResponse>> getOrCreateDraft(
+            @RequestHeader("X-User-Id") String userId) {
+
+        CompositionResponse response = compositionService.getOrCreateDraft(userId);
+
+        return ResponseEntity.ok(BaseResponse.<CompositionResponse>builder()
+                .success(true)
+                .message("Draft retrieved successfully")
+                .data(response)
+                .build());
+    }
+
     @PostMapping
     @Operation(summary = "Create a new composition (as draft)")
     public ResponseEntity<BaseResponse<CompositionResponse>> createComposition(

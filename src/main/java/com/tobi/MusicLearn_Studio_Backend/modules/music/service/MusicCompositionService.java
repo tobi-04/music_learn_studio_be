@@ -16,6 +16,11 @@ public interface MusicCompositionService {
     CompositionResponse createComposition(CreateCompositionRequest request, String userId);
 
     /**
+     * Get or create a draft for the user (ensures single draft)
+     */
+    CompositionResponse getOrCreateDraft(String userId);
+
+    /**
      * Update an existing composition
      */
     CompositionResponse updateComposition(String compositionId, UpdateCompositionRequest request, String userId);

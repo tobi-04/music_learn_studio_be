@@ -2,6 +2,7 @@ package com.tobi.MusicLearn_Studio_Backend.modules.music.controller;
 
 import com.tobi.MusicLearn_Studio_Backend.common.dto.BaseResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.request.CreateMusicTrackRequest;
+import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.request.UpdateMusicTrackRequest;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.response.MusicTrackResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.service.MusicTrackService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,10 +30,11 @@ public class MusicTrackController {
     @Operation(summary = "Upload a new music track")
     public ResponseEntity<BaseResponse<MusicTrackResponse>> uploadTrack(
             @RequestPart("file") MultipartFile file,
+            @RequestPart(value = "image", required = false) MultipartFile image,
             @Valid @RequestPart("data") CreateMusicTrackRequest request,
             @RequestHeader("X-User-Id") String userId) throws IOException {
 
-        MusicTrackResponse response = musicTrackService.uploadTrack(file, request, userId);
+        MusicTrackResponse response = musicTrackService.uploadTrack(file, image, request, userId);
 
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.<MusicTrackResponse>builder()
@@ -108,6 +110,23 @@ public class MusicTrackController {
         return ResponseEntity.ok(BaseResponse.<Void>builder()
                 .success(true)
                 .message("Track deleted successfully")
+                .build());
+    }
+
+    @PutMapping(value = "/{trackId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @Operation(summary = "Update track metadata (title, description, genre, tags, cover image)")
+    public ResponseEntity<BaseResponse<MusicTrackResponse>> updateTrack(
+            @PathVariable String trackId,
+            @RequestPart(value = "image", required = false) MultipartFile image,
+            @Valid @RequestPart("data") UpdateMusicTrackRequest request,
+            @RequestHeader("X-User-Id") String userId) throws IOException {
+
+        MusicTrackResponse response = musicTrackService.updateTrack(trackId, image, request, userId);
+
+        return ResponseEntity.ok(BaseResponse.<MusicTrackResponse>builder()
+                .success(true)
+                .message("Track updated successfully")
+                .data(response)
                 .build());
     }
 

@@ -1,6 +1,7 @@
 package com.tobi.MusicLearn_Studio_Backend.modules.music.service;
 
 import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.request.CreateMusicTrackRequest;
+import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.request.UpdateMusicTrackRequest;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.response.MusicTrackResponse;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -12,7 +13,8 @@ public interface MusicTrackService {
     /**
      * Upload a new music track with file
      */
-    MusicTrackResponse uploadTrack(MultipartFile file, CreateMusicTrackRequest request, String userId)
+    MusicTrackResponse uploadTrack(MultipartFile file, MultipartFile image, CreateMusicTrackRequest request,
+            String userId)
             throws IOException;
 
     /**
@@ -39,6 +41,13 @@ public interface MusicTrackService {
      * Delete a track (only owner can delete)
      */
     void deleteTrack(String trackId, String userId);
+
+    /**
+     * Update track metadata (title, description, genre, tags, cover image)
+     * Does not allow updating the audio file itself
+     */
+    MusicTrackResponse updateTrack(String trackId, MultipartFile image,
+            UpdateMusicTrackRequest request, String userId) throws IOException;
 
     /**
      * Get track by ID (only if public or owned by user)

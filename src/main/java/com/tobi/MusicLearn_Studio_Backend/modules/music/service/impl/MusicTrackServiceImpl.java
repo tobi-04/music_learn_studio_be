@@ -4,9 +4,11 @@ import com.tobi.MusicLearn_Studio_Backend.common.service.R2StorageService;
 import com.tobi.MusicLearn_Studio_Backend.modules.auth.entity.User;
 import com.tobi.MusicLearn_Studio_Backend.modules.auth.repository.UserRepository;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.request.CreateMusicTrackRequest;
+import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.request.UpdateMusicTrackRequest;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.response.MusicTrackResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.entity.MusicListeningHistory;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.entity.MusicTrack;
+import com.tobi.MusicLearn_Studio_Backend.modules.music.repository.MusicLikeRepository;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.repository.MusicListeningHistoryRepository;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.repository.MusicTrackRepository;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.service.MusicTrackService;
@@ -32,12 +34,14 @@ public class MusicTrackServiceImpl implements MusicTrackService {
 
     private final MusicTrackRepository musicTrackRepository;
     private final MusicListeningHistoryRepository listeningHistoryRepository;
+    private final MusicLikeRepository musicLikeRepository;
     private final UserRepository userRepository;
     private final R2StorageService r2StorageService;
 
     @Override
     @Transactional
-    public MusicTrackResponse uploadTrack(MultipartFile file, CreateMusicTrackRequest request, String userId)
+    public MusicTrackResponse uploadTrack(MultipartFile file, MultipartFile image, CreateMusicTrackRequest request,
+            String userId)
             throws IOException {
         // Validate audio file
         if (!r2StorageService.validateAudioFile(file)) {
@@ -47,13 +51,23 @@ public class MusicTrackServiceImpl implements MusicTrackService {
         // Upload file to R2
         String fileUrl = r2StorageService.uploadFile(file, "music/tracks");
 
+        // Upload image to R2 if provided
+        String thumbnailUrl = null;
+        if (image != null && !image.isEmpty()) {
+            // Basic validation for image could be added here
+            thumbnailUrl = r2StorageService.uploadFile(image, "music/thumbnails");
+        }
+
         // Create track entity
         MusicTrack track = MusicTrack.builder()
                 .userId(userId)
                 .title(request.getTitle())
                 .description(request.getDescription())
                 .fileUrl(fileUrl)
-                .coverImageUrl(request.getCoverImageUrl())
+                .thumbnailUrl(thumbnailUrl)
+                .coverImageUrl(thumbnailUrl != null ? thumbnailUrl : request.getCoverImageUrl()) // Use uploaded
+                                                                                                 // thumbnail if
+                                                                                                 // available
                 .duration(request.getDuration())
                 .fileSize(request.getFileSize())
                 .genre(request.getGenre())
@@ -181,9 +195,77 @@ public class MusicTrackServiceImpl implements MusicTrackService {
         });
     }
 
+    @Override
+    @Transactional
+    public MusicTrackResponse updateTrack(String trackId, MultipartFile image,
+            UpdateMusicTrackRequest request, String userId) throws IOException {
+        // Find track and verify ownership
+        MusicTrack track = musicTrackRepository.findByIdAndUserId(trackId, userId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Track not found or you don't have permission to update it"));
+
+        // Update fields if provided
+        if (request.getTitle() != null) {
+            track.setTitle(request.getTitle());
+        }
+        if (request.getDescription() != null) {
+            track.setDescription(request.getDescription());
+        }
+        if (request.getGenre() != null) {
+            track.setGenre(request.getGenre());
+        }
+        if (request.getTags() != null) {
+            track.setTags(request.getTags());
+        }
+        if (request.getIsPublic() != null) {
+            track.setIsPublic(request.getIsPublic());
+        }
+
+        // Update cover image if provided
+        if (image != null && !image.isEmpty()) {
+            // Delete old cover image if exists
+            if (track.getCoverImageUrl() != null) {
+                try {
+                    r2StorageService.deleteFile(track.getCoverImageUrl());
+                } catch (Exception e) {
+                    log.warn("Failed to delete old cover image", e);
+                }
+            }
+
+            // Upload new cover image
+            String newCoverUrl = r2StorageService.uploadFile(image, "music/thumbnails");
+            track.setCoverImageUrl(newCoverUrl);
+            track.setThumbnailUrl(newCoverUrl);
+        }
+
+        track = musicTrackRepository.save(track);
+        log.info("Music track updated: {} by user {}", track.getTitle(), userId);
+
+        return toResponse(track);
+    }
+
+    // Assuming this is part of a class, adding the repository injection here.
+    // In a real Spring application, this would typically be a field at the top of
+    // the class
+    // and injected via constructor or @Autowired.
+    // For the purpose of this edit, we'll place it here to demonstrate the
+    // addition.
+    // private final MusicLikeRepository musicLikeRepository; // This line would be
+    // at the top of the class.
+
     private MusicTrackResponse toResponse(MusicTrack track) {
         // Fetch user info
+        log.debug("Looking up user with ID: {} for track: {}", track.getUserId(), track.getId());
         User user = userRepository.findById(track.getUserId()).orElse(null);
+
+        if (user == null) {
+            log.warn("User not found for userId: {} on track: {}", track.getUserId(), track.getId());
+        } else {
+            log.debug("Found user: {} (username: {}) for track: {}", user.getId(), user.getUsername(), track.getId());
+        }
+
+        // Get dynamic like count
+        long likeCount = musicLikeRepository.countByTrackId(track.getId());
 
         return MusicTrackResponse.builder()
                 .id(track.getId())
@@ -193,6 +275,7 @@ public class MusicTrackServiceImpl implements MusicTrackService {
                 .title(track.getTitle())
                 .description(track.getDescription())
                 .fileUrl(track.getFileUrl())
+                .thumbnailUrl(track.getThumbnailUrl())
                 .coverImageUrl(track.getCoverImageUrl())
                 .duration(track.getDuration())
                 .fileSize(track.getFileSize())
@@ -200,7 +283,7 @@ public class MusicTrackServiceImpl implements MusicTrackService {
                 .genre(track.getGenre())
                 .tags(track.getTags())
                 .playCount(track.getPlayCount())
-                .likeCount(track.getLikeCount())
+                .likeCount(likeCount)
                 .commentCount(track.getCommentCount())
                 .isPublic(track.getIsPublic())
                 .createdAt(track.getCreatedAt())

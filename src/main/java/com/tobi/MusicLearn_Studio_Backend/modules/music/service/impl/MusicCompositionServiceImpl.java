@@ -4,7 +4,9 @@ import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.request.CreateCompos
 import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.request.UpdateCompositionRequest;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.dto.response.CompositionResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.entity.MusicComposition;
+import com.tobi.MusicLearn_Studio_Backend.modules.music.entity.MusicTrack;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.repository.MusicCompositionRepository;
+import com.tobi.MusicLearn_Studio_Backend.modules.music.repository.MusicTrackRepository;
 import com.tobi.MusicLearn_Studio_Backend.modules.music.service.MusicCompositionService;
 import com.tobi.MusicLearn_Studio_Backend.common.service.R2StorageService;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class MusicCompositionServiceImpl implements MusicCompositionService {
 
     private final MusicCompositionRepository compositionRepository;
+    private final MusicTrackRepository musicTrackRepository;
     private final R2StorageService r2StorageService;
 
     @Override
@@ -43,6 +46,38 @@ public class MusicCompositionServiceImpl implements MusicCompositionService {
 
         MusicComposition saved = compositionRepository.save(composition);
         log.info("Composition created with ID: {}", saved.getId());
+
+        return CompositionResponse.fromEntity(saved);
+    }
+
+    @Override
+    public CompositionResponse getOrCreateDraft(String userId) {
+        log.info("Getting or creating draft for user: {}", userId);
+
+        // Check if user already has a draft
+        List<MusicComposition> drafts = compositionRepository.findByUserIdAndStatus(userId,
+                MusicComposition.CompositionStatus.DRAFT);
+
+        if (!drafts.isEmpty()) {
+            // Return the most recent draft
+            // If multiple exist (legacy data), return the first one
+            return CompositionResponse.fromEntity(drafts.get(0));
+        }
+
+        // Create new draft
+        MusicComposition composition = MusicComposition.builder()
+                .userId(userId)
+                .title("Untitled Composition")
+                .description("New composition")
+                .status(MusicComposition.CompositionStatus.DRAFT)
+                .bpm(120)
+                .key("C")
+                .scale("Major")
+                .isPublic(false)
+                .build();
+
+        MusicComposition saved = compositionRepository.save(composition);
+        log.info("New draft created with ID: {}", saved.getId());
 
         return CompositionResponse.fromEntity(saved);
     }
@@ -175,7 +210,51 @@ public class MusicCompositionServiceImpl implements MusicCompositionService {
         MusicComposition published = compositionRepository.save(composition);
         log.info("Composition published: {}", published.getId());
 
+        // Also create a MusicTrack entry so it appears in music listings
+        try {
+            // Calculate duration from file (estimate - you might want to calculate this
+            // better)
+            double estimatedDuration = calculateDuration(published);
+
+            MusicTrack track = MusicTrack.builder()
+                    .userId(userId)
+                    .title(published.getTitle())
+                    .description(published.getDescription())
+                    .fileUrl(audioUrl)
+                    .coverImageUrl(published.getCoverImageUrl())
+                    .thumbnailUrl(published.getCoverImageUrl())
+                    .duration(estimatedDuration)
+                    .fileSize(audioFile.getSize())
+                    .genre("Composition")
+                    .tags(List.of("composition", "studio"))
+                    .isPublic(published.getIsPublic())
+                    .playCount(0L)
+                    .likeCount(0L)
+                    .commentCount(0L)
+                    .build();
+
+            musicTrackRepository.save(track);
+            log.info("Created MusicTrack entry for published composition: {}", compositionId);
+        } catch (Exception e) {
+            log.error("Failed to create MusicTrack for composition", e);
+            // Don't fail the entire publish operation
+        }
+
         return CompositionResponse.fromEntity(published);
+    }
+
+    private double calculateDuration(MusicComposition composition) {
+        // Estimate duration based on number of notes and BPM
+        // This is a rough estimate - adjust as needed
+        if (composition.getTracks() == null || composition.getTracks().isEmpty()) {
+            return 1.0; // Default 1 minute
+        }
+
+        // Calculate based on BPM and total beats
+        int totalBeats = 16; // Default for now
+        int bpm = composition.getBpm() != null ? composition.getBpm() : 120;
+        double durationSeconds = (totalBeats / (double) bpm) * 60;
+        return durationSeconds / 60.0; // Convert to minutes
     }
 
     @Override

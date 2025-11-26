@@ -30,6 +30,8 @@ public class MusicTrack extends BaseEntity {
 
     private String fileUrl; // R2 storage URL for MP3
 
+    private String thumbnailUrl; // R2 storage URL for Cover Image
+
     private String coverImageUrl;
 
     private Double duration; // Duration in MINUTES (not seconds!)

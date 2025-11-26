@@ -7,9 +7,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
+import org.springframework.data.mongodb.core.index.CompoundIndexes;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.time.LocalDateTime;
 
 /**
  * Music Like entity
@@ -19,16 +18,15 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 @Document(collection = "music_likes")
-@CompoundIndex(name = "user_track_idx", def = "{'userId': 1, 'trackId': 1}", unique = true)
-public class MusicLike {
+@CompoundIndexes({
+        @CompoundIndex(name = "user_track_idx", def = "{'userId': 1, 'trackId': 1}", unique = true),
+        @CompoundIndex(name = "track_idx", def = "{'trackId': 1}")
+})
+public class MusicLike extends BaseEntity {
 
-    private String id;
+    private String userId; // User who liked the track
 
-    private String userId;
-
-    private String trackId;
-
-    private LocalDateTime createdAt;
+    private String trackId; // Track that was liked
 }
