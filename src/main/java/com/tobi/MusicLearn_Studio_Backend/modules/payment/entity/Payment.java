@@ -34,6 +34,11 @@ public class Payment extends BaseEntity {
     private String transactionId; // External payment gateway transaction ID
 
     @Indexed
+    private String sepayTransactionId; // SePay-specific transaction ID
+
+    private String qrCodeUrl; // URL of the generated QR code for payment
+
+    @Indexed
     private LocalDateTime paymentDate; // When payment was made
 
     private String description; // Optional payment description

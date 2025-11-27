@@ -13,6 +13,11 @@ public interface ProgressService {
     UserCourseProgressResponse enrollCourse(String userId, String courseId);
 
     /**
+     * Enroll user after successful payment (bypasses price validation)
+     */
+    UserCourseProgressResponse enrollCourseAfterPayment(String userId, String courseId);
+
+    /**
      * Mark a chapter as completed
      */
     void markChapterComplete(String userId, String chapterId);

@@ -37,6 +37,26 @@ public class ProgressServiceImpl implements ProgressService {
         Course course = courseRepository.findById(courseId)
                 .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
 
+        // Check if this is a paid course
+        if (course.getPrice() != null && course.getPrice() > 0) {
+            throw new BadRequestException("This is a paid course. Please complete payment first.");
+        }
+
+        return performEnrollment(userId, courseId, course);
+    }
+
+    @Override
+    @Transactional
+    public UserCourseProgressResponse enrollCourseAfterPayment(String userId, String courseId) {
+        // Verify course exists
+        Course course = courseRepository.findById(courseId)
+                .orElseThrow(() -> new ResourceNotFoundException("Course not found with id: " + courseId));
+
+        // Skip price check - this is called after payment is completed
+        return performEnrollment(userId, courseId, course);
+    }
+
+    private UserCourseProgressResponse performEnrollment(String userId, String courseId, Course course) {
         // Check if already enrolled
         Optional<UserCourseProgress> existingProgress = userCourseProgressRepository.findByUserIdAndCourseId(userId,
                 courseId);

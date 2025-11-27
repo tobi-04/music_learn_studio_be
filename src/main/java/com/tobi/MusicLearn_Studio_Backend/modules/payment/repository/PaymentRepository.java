@@ -26,4 +26,8 @@ public interface PaymentRepository extends MongoRepository<Payment, String> {
     Long countByStatus(String status);
 
     boolean existsByUserIdAndCourseIdAndStatus(String userId, String courseId, String status);
+
+    Payment findByTransactionId(String transactionId);
+
+    Payment findByUserIdAndCourseIdAndStatus(String userId, String courseId, String status);
 }

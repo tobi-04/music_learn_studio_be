@@ -23,4 +23,10 @@ public interface PaymentService {
     Map<String, Double> getMonthlyRevenue(int months);
 
     boolean hasUserPurchasedCourse(String userId, String courseId);
+
+    Payment getPaymentByTransactionId(String transactionId);
+
+    Payment updatePaymentStatus(String paymentId, String status, String sepayTransactionId);
+
+    Payment findPendingPayment(String userId, String courseId);
 }

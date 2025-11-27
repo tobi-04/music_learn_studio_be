@@ -29,6 +29,11 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     @Override
+    public Payment findPendingPayment(String userId, String courseId) {
+        return paymentRepository.findByUserIdAndCourseIdAndStatus(userId, courseId, "pending");
+    }
+
+    @Override
     public Payment getPaymentById(String id) {
         return paymentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment not found with id: " + id));
@@ -80,5 +85,30 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public boolean hasUserPurchasedCourse(String userId, String courseId) {
         return paymentRepository.existsByUserIdAndCourseIdAndStatus(userId, courseId, "completed");
+    }
+
+    @Override
+    public Payment getPaymentByTransactionId(String transactionId) {
+        Payment payment = paymentRepository.findByTransactionId(transactionId);
+        if (payment == null) {
+            throw new ResourceNotFoundException("Payment not found with transaction ID: " + transactionId);
+        }
+        return payment;
+    }
+
+    @Override
+    public Payment updatePaymentStatus(String paymentId, String status, String sepayTransactionId) {
+        Payment payment = getPaymentById(paymentId);
+        payment.setStatus(status);
+
+        if (sepayTransactionId != null && !sepayTransactionId.isEmpty()) {
+            payment.setSepayTransactionId(sepayTransactionId);
+        }
+
+        if ("completed".equals(status) && payment.getPaymentDate() == null) {
+            payment.setPaymentDate(LocalDateTime.now());
+        }
+
+        return paymentRepository.save(payment);
     }
 }
