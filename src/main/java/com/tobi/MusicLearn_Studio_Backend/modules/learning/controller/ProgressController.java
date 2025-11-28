@@ -1,6 +1,9 @@
 package com.tobi.MusicLearn_Studio_Backend.modules.learning.controller;
 
 import com.tobi.MusicLearn_Studio_Backend.common.dto.BaseResponse;
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.AdminProgressStatsResponse;
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.CourseProgressStatsResponse;
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.StudentResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.StudentStatsResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.UserCourseProgressResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.learning.service.ProgressService;
@@ -90,6 +93,39 @@ public class ProgressController {
         return ResponseEntity.ok(BaseResponse.<StudentStatsResponse>builder()
                 .success(true)
                 .message("Student stats retrieved successfully")
+                .data(stats)
+                .build());
+    }
+
+    @GetMapping("/admin/students")
+    @Operation(summary = "Get all students (Admin)")
+    public ResponseEntity<BaseResponse<List<StudentResponse>>> getAllStudents() {
+        List<StudentResponse> students = progressService.getAllStudents();
+        return ResponseEntity.ok(BaseResponse.<List<StudentResponse>>builder()
+                .success(true)
+                .message("Students retrieved successfully")
+                .data(students)
+                .build());
+    }
+
+    @GetMapping("/admin/stats")
+    @Operation(summary = "Get admin progress stats")
+    public ResponseEntity<BaseResponse<AdminProgressStatsResponse>> getAdminProgressStats() {
+        AdminProgressStatsResponse stats = progressService.getAdminProgressStats();
+        return ResponseEntity.ok(BaseResponse.<AdminProgressStatsResponse>builder()
+                .success(true)
+                .message("Admin stats retrieved successfully")
+                .data(stats)
+                .build());
+    }
+
+    @GetMapping("/admin/courses")
+    @Operation(summary = "Get course progress stats (Admin)")
+    public ResponseEntity<BaseResponse<List<CourseProgressStatsResponse>>> getCourseProgressStats() {
+        List<CourseProgressStatsResponse> stats = progressService.getCourseProgressStats();
+        return ResponseEntity.ok(BaseResponse.<List<CourseProgressStatsResponse>>builder()
+                .success(true)
+                .message("Course progress stats retrieved successfully")
                 .data(stats)
                 .build());
     }

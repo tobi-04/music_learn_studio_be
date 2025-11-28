@@ -1,5 +1,8 @@
 package com.tobi.MusicLearn_Studio_Backend.modules.learning.service;
 
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.AdminProgressStatsResponse;
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.CourseProgressStatsResponse;
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.StudentResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.StudentStatsResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.UserCourseProgressResponse;
 
@@ -41,4 +44,11 @@ public interface ProgressService {
      * Calculate and update course progress percentage
      */
     void recalculateCourseProgress(String userId, String courseId);
+
+    // Admin features
+    List<StudentResponse> getAllStudents();
+
+    AdminProgressStatsResponse getAdminProgressStats();
+
+    List<CourseProgressStatsResponse> getCourseProgressStats();
 }

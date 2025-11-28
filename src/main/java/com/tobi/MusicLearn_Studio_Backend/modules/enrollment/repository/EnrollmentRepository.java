@@ -20,8 +20,7 @@ public interface EnrollmentRepository extends MongoRepository<Enrollment, String
 
     Long countByCourseId(String courseId);
 
-    @Query("{ 'isActive': true }")
-    Long countActiveEnrollments();
+    Long countByIsActiveTrue();
 
     @Query("{ 'completedAt': { $ne: null } }")
     Long countCompletedEnrollments();

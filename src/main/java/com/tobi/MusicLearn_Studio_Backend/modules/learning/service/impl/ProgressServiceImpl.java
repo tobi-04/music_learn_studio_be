@@ -2,6 +2,9 @@ package com.tobi.MusicLearn_Studio_Backend.modules.learning.service.impl;
 
 import com.tobi.MusicLearn_Studio_Backend.common.exceptions.BadRequestException;
 import com.tobi.MusicLearn_Studio_Backend.common.exceptions.ResourceNotFoundException;
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.AdminProgressStatsResponse;
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.CourseProgressStatsResponse;
+import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.StudentResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.StudentStatsResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.learning.dto.response.UserCourseProgressResponse;
 import com.tobi.MusicLearn_Studio_Backend.modules.learning.entity.Chapter;
@@ -29,6 +32,7 @@ public class ProgressServiceImpl implements ProgressService {
     private final UserChapterProgressRepository userChapterProgressRepository;
     private final CourseRepository courseRepository;
     private final ChapterRepository chapterRepository;
+    private final com.tobi.MusicLearn_Studio_Backend.modules.auth.repository.UserRepository userRepository;
 
     @Override
     @Transactional
@@ -239,5 +243,78 @@ public class ProgressServiceImpl implements ProgressService {
                 .completedAt(progress.getCompletedAt())
                 .lastAccessedAt(progress.getLastAccessedAt())
                 .build();
+    }
+
+    @Override
+    public List<StudentResponse> getAllStudents() {
+        // Get all users with role USER
+        List<com.tobi.MusicLearn_Studio_Backend.modules.auth.entity.User> users = userRepository.findAll().stream()
+                .filter(user -> "USER".equals(user.getRole()))
+                .collect(Collectors.toList());
+
+        return users.stream().map(user -> {
+            // Count enrolled courses
+            int enrolledCount = userCourseProgressRepository.findByUserId(user.getId()).size();
+
+            return StudentResponse.builder()
+                    .id(user.getId())
+                    .name(user.getName())
+                    .email(user.getEmail())
+                    .createdAt(user.getCreatedAt())
+                    .enrolledCourses(enrolledCount)
+                    .isLocked(user.getIsLocked())
+                    .build();
+        }).collect(Collectors.toList());
+    }
+
+    @Override
+    public AdminProgressStatsResponse getAdminProgressStats() {
+        // Total students (users with role USER)
+        long totalStudents = userRepository.findAll().stream()
+                .filter(user -> "USER".equals(user.getRole()))
+                .count();
+
+        // Completed lessons (chapters)
+        long completedLessons = userChapterProgressRepository.findAll().stream()
+                .filter(UserChapterProgress::getIsCompleted)
+                .count();
+
+        // Avg hours (placeholder as we don't track time yet)
+        double avgHours = 0.0;
+
+        // Avg quiz score (placeholder)
+        double avgQuizScore = 0.0;
+
+        return AdminProgressStatsResponse.builder()
+                .totalStudents(totalStudents)
+                .completedLessons(completedLessons)
+                .avgHours(avgHours)
+                .avgQuizScore(avgQuizScore)
+                .build();
+    }
+
+    @Override
+    public List<CourseProgressStatsResponse> getCourseProgressStats() {
+        List<Course> courses = courseRepository.findAll();
+
+        return courses.stream().map(course -> {
+            List<UserCourseProgress> progressList = userCourseProgressRepository.findByCourseId(course.getId());
+            long enrolledStudents = progressList.size();
+
+            double avgCompletion = 0.0;
+            if (enrolledStudents > 0) {
+                double totalPercentage = progressList.stream()
+                        .mapToDouble(UserCourseProgress::getProgressPercentage)
+                        .sum();
+                avgCompletion = Math.round((totalPercentage / enrolledStudents) * 100.0) / 100.0;
+            }
+
+            return CourseProgressStatsResponse.builder()
+                    .id(course.getId())
+                    .name(course.getTitle())
+                    .enrolledStudents(enrolledStudents)
+                    .completionRate(avgCompletion)
+                    .build();
+        }).collect(Collectors.toList());
     }
 }

@@ -86,7 +86,7 @@ public class EnrollmentServiceImpl implements EnrollmentService {
 
     @Override
     public Long getActiveEnrollments() {
-        return enrollmentRepository.countActiveEnrollments();
+        return enrollmentRepository.countByIsActiveTrue();
     }
 
     @Override
